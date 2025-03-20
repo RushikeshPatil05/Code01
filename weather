@@ -1,0 +1,83 @@
+import requests
+import pyttsx3
+import speech_recognition as sr
+
+# OpenWeatherMap API Key (Replace with your key)
+WEATHER_API_KEY = "162cfe8f58a44acf9d8141242252003"
+WEATHER_URL = "https://api.weatherapi.com/v1/current.json?key=162cfe8f58a44acf9d8141242252003&q=London&aqi=yes"
+
+# Initialize Text-to-Speech Engine
+engine = pyttsx3.init()
+engine.setProperty("rate", 150)
+
+
+# Function to make Jarvis speak
+def say(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+# Function to get weather details
+def get_weather(city):
+    try:
+        params = {
+            "q": city,
+            "appid": WEATHER_API_KEY,
+            "units": "metric"  # Use "imperial" for Fahrenheit
+        }
+        response = requests.get(WEATHER_URL, params=params)
+        weather_data = response.json()
+
+        if weather_data["cod"] == 200:
+            temp = weather_data["main"]["temp"]
+            weather_desc = weather_data["weather"][0]["description"]
+            humidity = weather_data["main"]["humidity"]
+            wind_speed = weather_data["wind"]["speed"]
+
+            weather_report = (
+                f"The weather in {city} is {weather_desc}. "
+                f"The temperature is {temp}°C, with a humidity of {humidity}% "
+                f"and wind speed of {wind_speed} meters per second."
+            )
+            print(weather_report)
+            say(weather_report)
+        else:
+            say("Sorry, I couldn't fetch the weather data. Please check the city name.")
+
+    except Exception as e:
+        print("Error:", e)
+        say("There was an error retrieving the weather details.")
+
+
+# Function to take voice command
+def take_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.adjust_for_ambient_noise(source)
+        audio = r.listen(source)
+        try:
+            print("Recognizing...")
+            query = r.recognize_google(audio, language="en-in")
+            print(f"User: {query}")
+            return query.lower()
+        except sr.UnknownValueError:
+            return "Sorry, I didn't catch that."
+        except sr.RequestError:
+            return "Speech recognition service is unavailable."
+
+
+# Main function
+if __name__ == "__main__":
+    say("Hello! I am Jarvis. How can I assist you today?")
+
+    while True:
+        query = take_command()
+
+        if "weather in" in query:
+            city = query.split("in")[-1].strip()
+            get_weather(city)
+
+        elif "exit" in query:
+            say("Goodbye! Have a great day.")
+            break
