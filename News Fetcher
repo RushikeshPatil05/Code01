@@ -1,0 +1,44 @@
+import requests
+import pyttsx3
+
+# Set up API Key & URL
+NEWS_API_KEY = "ed4a67daeb8544b58061459a06bac61e"
+NEWS_URL = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={NEWS_API_KEY}"
+
+# Initialize Text-to-Speech Engine
+engine = pyttsx3.init()
+engine.setProperty("rate", 150)  # Adjust speed
+
+
+def say(text):
+    """Make Jarvis speak"""
+    engine.say(text)
+    engine.runAndWait()
+
+
+def get_news():
+    """Fetch and read news headlines"""
+    try:
+        response = requests.get(NEWS_URL)
+        news_data = response.json()
+
+        if news_data["status"] == "ok":
+            articles = news_data["articles"][:5]  # Get top 5 news articles
+
+            say("Here are today's top news headlines.")
+            for i, article in enumerate(articles, 1):
+                headline = article["title"]
+                print(f"{i}. {headline}")
+                say(headline)
+
+        else:
+            say("Sorry, I couldn't fetch the news.")
+
+    except Exception as e:
+        print("Error:", e)
+        say("There was an error fetching the news.")
+
+
+# Run the function
+if __name__ == "__main__":
+    get_news()
